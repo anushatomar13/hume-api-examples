@@ -1,73 +1,43 @@
 "use client";
-import { 
-  VoiceProvider, 
-  ToolCall, 
+import {
+  VoiceProvider,
+  ToolCall,
   ToolCallHandler,
-  ToolResponse, 
-  ToolError, 
+  ToolResponse,
+  ToolError,
 } from "@humeai/voice-react";
-import Messages from "./Controls";
-import Controls from "./Messages";
+import Messages from "./Messages";
+import Controls from "./Controls";
 
 const handleToolCall: ToolCallHandler = async (
   toolCall: ToolCall
 ): Promise<ToolResponse | ToolError> => {
   console.log("Tool call received", toolCall);
 
-  if (toolCall.name === 'weather_tool') {
+  if (toolCall.name === 'virtual_therapist') {
     try {
+      // Parse the parameters if needed
       const args = JSON.parse(toolCall.parameters) as {
-        location: string;
-        format: 'fahrenheit' | 'celsius';
+        prompt: string;
       };
 
-      const location = await fetch(
-        `https://geocode.maps.co/search?q=${args.location}&api_key=${process.env.NEXT_PUBLIC_GEOCODING_API_KEY}`,
-      );
-
-      const locationResults = (await location.json()) as {
-        lat: string;
-        lon: string;
-      }[];
-
-      const { lat, lon } = locationResults[0];
-
-      const pointMetadataEndpoint: string = `https://api.weather.gov/points/${parseFloat(lat).toFixed(3)},${parseFloat(lon).toFixed(3)}`;
-
-      const result = await fetch(pointMetadataEndpoint, {
-        method: 'GET',
-      });
-
-      const json = (await result.json()) as {
-        properties: {
-          forecast: string;
-        };
-      };
-      const { properties } = json;
-      const { forecast: forecastUrl } = properties;
-
-      const forecastResult = await fetch(forecastUrl);
-
-      const forecastJson = (await forecastResult.json()) as {
-        properties: {
-          periods: unknown[];
-        };
-      };
-      const forecast = forecastJson.properties.periods;
+      // Example of a possible interaction
+      // Customize this as per the requirements of the virtual therapist
+      const responseContent = Yuri says: I understand you're feeling ${args.prompt}, let's talk more about it.;
 
       return {
         type: 'tool_response',
         tool_call_id: toolCall.tool_call_id,
-        content: JSON.stringify(forecast),
+        content: JSON.stringify({ message: responseContent }),
       };
     } catch (error) {
       return {
         type: 'tool_error',
         tool_call_id: toolCall.tool_call_id,
-        error: 'Weather tool error',
-        code: 'weather_tool_error',
+        error: 'Virtual therapist tool error',
+        code: 'virtual_therapist_error',
         level: 'warn',
-        content: 'There was an error with the weather tool',
+        content: 'There was an error with the virtual therapist tool',
       };
     }
   } else {
@@ -89,7 +59,7 @@ export default function ClientComponent({
 }) {
   return (
     <VoiceProvider
-      configId={process.env.NEXT_PUBLIC_HUME_CONFIG_ID}
+      configId={process.env.NEXT_PUBLIC_HUME_CONFIG_ID} 
       auth={{ type: "accessToken", value: accessToken }}
       onToolCall={handleToolCall}
       onMessage={(message: unknown) => console.log(message)}
